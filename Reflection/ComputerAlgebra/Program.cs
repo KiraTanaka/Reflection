@@ -11,7 +11,7 @@ namespace ComputerAlgebra
 {
     class Program
     {
-        public static Expression SimplifyExpressionAndCompute(Expression left, Expression right,ExpressionType typeOperations)
+        private static Expression SimplifyExpressionAndCompute(Expression left, Expression right,ExpressionType typeOperations)
         {
             Expression simplifiedExpression = null;
             Func<Expression, Expression, Expression> simplifyConstantZeroInAdd = (x, y) => 
@@ -77,7 +77,7 @@ namespace ComputerAlgebra
         }
         static void Main(string[] args)
         {
-            Expression<Func<double, double>> f = x => (10 + Math.Sin(x)) * x;//(10 + Math.Sin(x))*x //2 * x * x * Math.Sin(x)
+            Expression<Func<double, double>> f = x => 2 * x * x * Math.Sin(x);//(10 + Math.Sin(x))*x //2 * x * x * Math.Sin(x)
             Console.WriteLine(f);
             var compiled = Differentiate(f);
             Console.WriteLine(compiled.Invoke(12));
