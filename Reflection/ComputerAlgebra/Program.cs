@@ -11,35 +11,38 @@ namespace ComputerAlgebra
 {
     class Program
     {
-        public static Expression SimplificationExpression(Expression left, Expression right)
+        public static Expression SimplifyExpressionAndCompute(Expression left, Expression right,ExpressionType typeOperations)
         {
             Expression simplifiedExpression = null;
-            Func<Expression, Expression> simplifyConstant = (x) =>
+            Func<Expression, Expression, Expression> simplifyConstantZeroInAdd = (x, y) => 
+            {
+                if (x.NodeType == ExpressionType.Constant)
+                    return ((double)((ConstantExpression)x).Value == 0.0) ? y : null;
+                return null;
+            };
+            Func<Expression, Expression> simplifyConstantZeroInMultiply =
+                (x) => { return ((double)((ConstantExpression)x).Value == 0.0) ? Expression.Constant(0.0) : null; };
+            Func<Expression, Expression, Expression> simplifyConstantOneInMultiply =
+                (x, y) => { return ((double)((ConstantExpression)x).Value == 1.0) ? y : null; };
+             Func<Expression, Expression, Expression> simplifyConstantInMultiply = (x, y) =>
              {
+                 Expression result;
                  if (x.NodeType == ExpressionType.Constant)
-                     if ((double)((ConstantExpression)x).Value == 0.0)
-                         return Expression.Constant(0.0);
-                     else if ((double)((ConstantExpression)x).Value == 1.0)
-                         return right;
+                 {
+                     result =  simplifyConstantZeroInMultiply(x);
+                     return (result == null) ? simplifyConstantOneInMultiply(x, y) : result;
+                 }
                  return null;
              };
-            simplifiedExpression = simplifyConstant(left);
-            simplifiedExpression = simplifiedExpression ?? simplifyConstant(right);
+            if (typeOperations == ExpressionType.Add)
+            {
+                simplifiedExpression = simplifyConstantZeroInAdd(left, right);
+                simplifiedExpression = simplifiedExpression ?? simplifyConstantZeroInAdd(right, left);
+                return simplifiedExpression ?? Expression.Add(left, right);
+            }
+            simplifiedExpression = simplifyConstantInMultiply(left, right);
+            simplifiedExpression = simplifiedExpression ?? simplifyConstantInMultiply(right, left);
             return simplifiedExpression ?? Expression.Multiply(left, right);
-            /*if (left.NodeType == ExpressionType.Constant)
-                if ((double)((ConstantExpression)left).Value == 0.0)
-                    simplifiedExpression = Expression.Constant(0.0);
-                else if ((double)((ConstantExpression)left).Value == 1.0)
-                    simplifiedExpression = right;
-            if (simplifiedExpression == null)
-                if (right.NodeType == ExpressionType.Constant)
-                    simplifiedExpression = ((double)((ConstantExpression)right).Value == 0.0)
-                        ? Expression.Constant(0.0)
-                        : ((double)((ConstantExpression)right).Value == 1.0)
-                        ? left
-                        : Expression.Multiply(left, right);
-                else
-                    simplifiedExpression = Expression.Multiply(left, right);*/
         }
         public static Expression Recurse(Expression expression,ParameterExpression parameter)
         {
@@ -58,27 +61,15 @@ namespace ComputerAlgebra
             {
                 left = Recurse(binExpression.Left, parameter);
                 right = Recurse(binExpression.Right, parameter);
-                if (left.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)left).Value == 0.0)
-                        return right;
-                if(right.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)right).Value == 0.0)
-                        return left;
-                return Expression.Add(left,right);
+                return SimplifyExpressionAndCompute(left, right, ExpressionType.Add);
             }
             else if (binExpression.NodeType == ExpressionType.Multiply)
             {
                 Expression leftDf = Recurse(binExpression.Left, parameter);
                 Expression rightDf = Recurse(binExpression.Right, parameter);
-                left = SimplificationExpression(leftDf, binExpression.Right);
-                right = SimplificationExpression(rightDf, binExpression.Left);
-                if (left.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)left).Value == 0.0) 
-                        return right;
-                if (right.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)right).Value == 0.0)
-                        return left;
-                return Expression.Add(left,right);
+                left = SimplifyExpressionAndCompute(leftDf, binExpression.Right, ExpressionType.Multiply);
+                right = SimplifyExpressionAndCompute(rightDf, binExpression.Left, ExpressionType.Multiply);
+                return SimplifyExpressionAndCompute(left, right, ExpressionType.Add);  
             }
             return expression;
         }
@@ -90,7 +81,7 @@ namespace ComputerAlgebra
         }
         static void Main(string[] args)
         {
-            Expression<Func<double, double>> f = x => (10 + Math.Sin(x))*x;
+            Expression<Func<double, double>> f = x => (10 + Math.Sin(x)) * x;//(10 + Math.Sin(x))*x //2 * x * x * Math.Sin(x)
             Console.WriteLine(f);
             var compiled = Differentiate(f);
             Console.WriteLine(compiled.Invoke(12));
