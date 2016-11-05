@@ -6,46 +6,35 @@ using System.Text;
 using System.Threading.Tasks;
 using Framework;
 using System.IO;
+using System.Linq.Expressions;
 
 namespace Application
 {
     class Program
     {
         readonly static string pathToDll = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.FullName, "DLL");
-        public static List<Type> GetTypesByInterface<TInterface>(List<Assembly> listAssembly)
+        public static List<Type> LoadTypesPlugins()
         {
-            if (!typeof(TInterface).IsInterface)
-                throw new ArgumentException("Type must be an interface");
-
+            List<string> files = new List<string>();
+            files.AddRange(Directory.GetFiles(pathToDll, "*.dll"));
             List<Type> listType = new List<Type>();
-            listAssembly.ForEach(assembly=> 
-                      listType.AddRange(assembly.GetExportedTypes()
-                      .Where(x => x.GetInterface(typeof(TInterface).Name) != null )
+            files.ForEach(file =>
+                      listType.AddRange(Assembly.LoadFrom(file).GetExportedTypes()
+                      .Where(x => x.GetInterface(typeof(IPlugin).Name) != null & x.GetConstructor(Type.EmptyTypes) != null)
                         .ToList()));
             return listType;
         }
-        public static List<Assembly> LoadPlugin()
-        {
-            string[] files = Directory.GetFiles(pathToDll, "*.dll");
-            List<Assembly> listAssembly = new List<Assembly>();
-            foreach (var file in files)
-            {
-                listAssembly.Add(Assembly.LoadFrom(file));
-            }
-            return listAssembly;
-        }
         static void Main(string[] args)
         {
-            List<Assembly> listAssembly = LoadPlugin();
-            List<Type> pluginTypes = GetTypesByInterface<IPlugin>(listAssembly);
+            List<Type> pluginTypes = LoadTypesPlugins();
             List<IPlugin> plugins = new List<IPlugin>();
+            Console.WriteLine("Available plugins:");
             foreach (Type pluginType in pluginTypes)
             {
                 IPlugin plugin = (IPlugin)Activator.CreateInstance(pluginType);
                 plugins.Add(plugin);
+                Console.WriteLine(plugin.Name);
             }
-            Console.WriteLine("Available plugins:");
-            plugins.ForEach(p => Console.WriteLine(p.Name));
             Console.ReadLine();
         }
     }
