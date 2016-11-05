@@ -40,7 +40,7 @@ namespace ComputerAlgebra
             simplifiedExpression = simplifiedExpression ?? simplifyConstantInMultiply(right, left);
             return simplifiedExpression ?? Expression.Multiply(left, right);
         }
-        public static Expression Recurse(Expression expression,ParameterExpression parameter)
+        private static Expression Recurse(Expression expression,ParameterExpression parameter)
         {
             BinaryExpression binExpression = null;
             Expression left = null, right = null;
