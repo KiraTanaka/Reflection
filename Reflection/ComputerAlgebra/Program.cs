@@ -11,6 +11,36 @@ namespace ComputerAlgebra
 {
     class Program
     {
+        public static Expression SimplificationExpression(Expression left, Expression right)
+        {
+            Expression simplifiedExpression = null;
+            Func<Expression, Expression> simplifyConstant = (x) =>
+             {
+                 if (x.NodeType == ExpressionType.Constant)
+                     if ((double)((ConstantExpression)x).Value == 0.0)
+                         return Expression.Constant(0.0);
+                     else if ((double)((ConstantExpression)x).Value == 1.0)
+                         return right;
+                 return null;
+             };
+            simplifiedExpression = simplifyConstant(left);
+            simplifiedExpression = simplifiedExpression ?? simplifyConstant(right);
+            return simplifiedExpression ?? Expression.Multiply(left, right);
+            /*if (left.NodeType == ExpressionType.Constant)
+                if ((double)((ConstantExpression)left).Value == 0.0)
+                    simplifiedExpression = Expression.Constant(0.0);
+                else if ((double)((ConstantExpression)left).Value == 1.0)
+                    simplifiedExpression = right;
+            if (simplifiedExpression == null)
+                if (right.NodeType == ExpressionType.Constant)
+                    simplifiedExpression = ((double)((ConstantExpression)right).Value == 0.0)
+                        ? Expression.Constant(0.0)
+                        : ((double)((ConstantExpression)right).Value == 1.0)
+                        ? left
+                        : Expression.Multiply(left, right);
+                else
+                    simplifiedExpression = Expression.Multiply(left, right);*/
+        }
         public static Expression Recurse(Expression expression,ParameterExpression parameter)
         {
             BinaryExpression binExpression = null;
@@ -40,32 +70,8 @@ namespace ComputerAlgebra
             {
                 Expression leftDf = Recurse(binExpression.Left, parameter);
                 Expression rightDf = Recurse(binExpression.Right, parameter);
-                if (leftDf.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)leftDf).Value == 0.0)
-                        left = Expression.Constant(0.0);
-                    else if ((double)((ConstantExpression)leftDf).Value == 1.0)
-                        left = binExpression.Right;
-                if (left == null && binExpression.Right.NodeType == ExpressionType.Constant)
-                    left = ((double)((ConstantExpression)binExpression.Right).Value == 0.0)
-                        ? Expression.Constant(0.0)
-                        : ((double)((ConstantExpression)binExpression.Right).Value == 1.0)
-                        ? leftDf
-                        : Expression.Multiply(leftDf, binExpression.Right);
-                else if (left == null)
-                    left = Expression.Multiply(leftDf, binExpression.Right);
-                if (rightDf.NodeType == ExpressionType.Constant)
-                    if ((double)((ConstantExpression)rightDf).Value == 0.0)
-                        right = Expression.Constant(0.0);
-                    else if ((double)((ConstantExpression)rightDf).Value == 1.0)
-                        right = binExpression.Left;
-                if (right == null && binExpression.Left.NodeType == ExpressionType.Constant)
-                    right = ((double)((ConstantExpression)binExpression.Left).Value == 0.0)
-                        ? Expression.Constant(0.0)
-                        : ((double)((ConstantExpression)binExpression.Left).Value == 1.0)
-                        ? rightDf
-                        : Expression.Multiply(binExpression.Left, rightDf);
-                else if (right == null)
-                    right = Expression.Multiply(binExpression.Left, rightDf);
+                left = SimplificationExpression(leftDf, binExpression.Right);
+                right = SimplificationExpression(rightDf, binExpression.Left);
                 if (left.NodeType == ExpressionType.Constant)
                     if ((double)((ConstantExpression)left).Value == 0.0) 
                         return right;
@@ -84,7 +90,7 @@ namespace ComputerAlgebra
         }
         static void Main(string[] args)
         {
-            Expression<Func<double, double>> f = x => 2*x*x*Math.Sin(x);
+            Expression<Func<double, double>> f = x => (10 + Math.Sin(x))*x;
             Console.WriteLine(f);
             var compiled = Differentiate(f);
             Console.WriteLine(compiled.Invoke(12));
