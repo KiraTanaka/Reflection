@@ -20,16 +20,16 @@ namespace ComputerAlgebra
                     return ((double)((ConstantExpression)x).Value == 0.0) ? y : null;
                 return null;
             };
-             Func<Expression, Expression, Expression> simplifyConstantInMultiply = (x, y) =>
-             {
-                 if (x.NodeType == ExpressionType.Constant)
-                 {
-                     return ((double)((ConstantExpression)x).Value == 0.0) ? Expression.Constant(0.0)
-                     : ((double)((ConstantExpression)x).Value == 1.0)?
-                      y: null;
-                 }
-                 return null;
-             };
+            Func<Expression, Expression, Expression> simplifyConstantInMultiply = (x, y) =>
+            {
+                if (x.NodeType == ExpressionType.Constant)
+                {
+                    return ((double)((ConstantExpression)x).Value == 0.0) ? Expression.Constant(0.0)
+                    : ((double)((ConstantExpression)x).Value == 1.0) ?
+                     y : null;
+                }
+                return null;
+            };
             if (typeOperations == ExpressionType.Add)
             {
                 simplifiedExpression = simplifyConstantZeroInAdd(left, right);
@@ -77,7 +77,7 @@ namespace ComputerAlgebra
         }
         static void Main(string[] args)
         {
-            Expression<Func<double, double>> f = x => 2 * x * x * Math.Sin(x);//(10 + Math.Sin(x))*x //2 * x * x * Math.Sin(x)
+            Expression<Func<double, double>> f = x => (10 + Math.Sin(x)) * x;//(10 + Math.Sin(x))*x //2 * x * x * Math.Sin(x)
             Console.WriteLine(f);
             var compiled = Differentiate(f);
             Console.WriteLine(compiled.Invoke(12));
