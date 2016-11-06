@@ -40,7 +40,7 @@ namespace ComputerAlgebra
             simplifiedExpression = simplifiedExpression ?? simplifyConstantInMultiply(right, left);
             return simplifiedExpression ?? Expression.Multiply(left, right);
         }
-        private static Expression Recurse(Expression expression,ParameterExpression parameter)
+        private static Expression Derivation(Expression expression,ParameterExpression parameter)
         {
             BinaryExpression binExpression = null;
             Expression left = null, right = null;
@@ -55,14 +55,14 @@ namespace ComputerAlgebra
             binExpression = (BinaryExpression)expression;
             if (binExpression.NodeType == ExpressionType.Add)
             {
-                left = Recurse(binExpression.Left, parameter);
-                right = Recurse(binExpression.Right, parameter);
+                left = Derivation(binExpression.Left, parameter);
+                right = Derivation(binExpression.Right, parameter);
                 return SimplifyExpressionAndCompute(left, right, ExpressionType.Add);
             }
             else if (binExpression.NodeType == ExpressionType.Multiply)
             {
-                Expression leftDf = Recurse(binExpression.Left, parameter);
-                Expression rightDf = Recurse(binExpression.Right, parameter);
+                Expression leftDf = Derivation(binExpression.Left, parameter);
+                Expression rightDf = Derivation(binExpression.Right, parameter);
                 left = SimplifyExpressionAndCompute(leftDf, binExpression.Right, ExpressionType.Multiply);
                 right = SimplifyExpressionAndCompute(rightDf, binExpression.Left, ExpressionType.Multiply);
                 return SimplifyExpressionAndCompute(left, right, ExpressionType.Add);  
@@ -71,7 +71,7 @@ namespace ComputerAlgebra
         }
         public static Func<double, double> Differentiate(Expression<Func<double, double>> exp)
         {
-            var dfExpression = Expression.Lambda<Func<double, double>>(Recurse(exp.Body, exp.Parameters[0]), exp.Parameters);
+            var dfExpression = Expression.Lambda<Func<double, double>>(Derivation(exp.Body, exp.Parameters[0]), exp.Parameters);
             Console.WriteLine(dfExpression);
             return dfExpression.Compile();
         }
